@@ -1,0 +1,20 @@
+Metadata-Version: 2.2
+Name: shap-e
+Version: 0.0.0
+Author: OpenAI
+License-File: LICENSE
+Requires-Dist: filelock
+Requires-Dist: Pillow
+Requires-Dist: torch
+Requires-Dist: fire
+Requires-Dist: humanize
+Requires-Dist: requests
+Requires-Dist: tqdm
+Requires-Dist: matplotlib
+Requires-Dist: scikit-image
+Requires-Dist: scipy
+Requires-Dist: numpy
+Requires-Dist: blobfile
+Requires-Dist: clip@ git+https://github.com/openai/CLIP.git
+Dynamic: author
+Dynamic: requires-dist
