@@ -138,7 +138,7 @@ df = pd.DataFrame({
 df.to_csv(OUT_CSV, index=False)
 print(f" Full results saved to: {OUT_CSV}")
 
-# === Step 5: Save summary ===
+#Save summary
 summary = {
     "clip_r_precision_top1 (%)": [100 * np.mean(clip_r_top1)],
     "clip_r_precision_top5 (%)": [100 * np.mean(clip_r_top5)],
