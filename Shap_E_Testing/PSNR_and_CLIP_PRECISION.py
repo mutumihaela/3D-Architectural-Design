@@ -1,134 +1,3 @@
-
-
-# # === Configuration ===
-# import os
-# import re
-# import clip
-# import torch
-# import pandas as pd
-# import numpy as np
-# from PIL import Image
-# from skimage.metrics import peak_signal_noise_ratio
-# import open3d as o3d
-
-# # === Configuration ===
-# DATA_DIR = "/shared_storage/mutumihaela/shape-e-bun/output "  
-# OUT_CSV = "/shared_storage/mutumihaela/shape-e-bun/output/metrix/clip_psnr_results.csv "
-# SUMMARY_CSV = "/shared_storage/mutumihaela/shape-e-bun/output/metrix/clip_psnr_summary.csv"
-# TMP_RENDER_DIR = os.path.join(DATA_DIR, "tmp_renders")
-# os.makedirs(TMP_RENDER_DIR, exist_ok=True)
-
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-# model, preprocess = clip.load("ViT-B/32", device=device)
-
-# # === Helper functions ===
-
-# def extract_prompt(filename):
-#     name = os.path.splitext(filename)[0]
-#     words = name.split("_")[:-1]  # remove ID suffix
-#     text = " ".join(words)
-#     return re.sub(r'\d+', '', text).strip()
-
-# def render_mesh(mesh_path, image_path, width=256, height=256):
-#     mesh = o3d.io.read_triangle_mesh(mesh_path)
-#     mesh.compute_vertex_normals()
-#     vis = o3d.visualization.Visualizer()
-#     vis.create_window(visible=False, width=width, height=height)
-#     vis.add_geometry(mesh)
-#     vis.get_render_option().mesh_show_back_face = True
-#     vis.poll_events()
-#     vis.update_renderer()
-#     vis.capture_screen_image(image_path)
-#     vis.destroy_window()
-
-# def load_image(path):
-#     return np.array(Image.open(path).convert("RGB"))
-
-# def compute_psnr(img1, img2):
-#     return peak_signal_noise_ratio(img1, img2, data_range=255)
-
-# # === Step 1: Collect samples ===
-# samples = []
-# for file in os.listdir(DATA_DIR):
-#     if file.endswith(".png"):
-#         base = os.path.splitext(file)[0]
-#         obj_path = os.path.join(DATA_DIR, base + ".obj")
-#         ply_path = os.path.join(DATA_DIR, base + ".ply")
-#         if os.path.exists(obj_path) and os.path.exists(ply_path):
-#             samples.append({
-#                 "filename": base,
-#                 "prompt": extract_prompt(file),
-#                 "image_path": os.path.join(DATA_DIR, file),
-#                 "obj_path": obj_path,
-#                 "ply_path": ply_path
-#             })
-
-# print(f"Found {len(samples)} samples")
-
-# # === Step 2: CLIP R-Precision ===
-# prompts = [s["prompt"] for s in samples]
-# images = [preprocess(Image.open(s["image_path"])) for s in samples]
-
-# print("Encoding with CLIP...")
-# with torch.no_grad():
-#     text_tokens = clip.tokenize(prompts).to(device)
-#     text_features = model.encode_text(text_tokens)
-#     image_features = model.encode_image(torch.stack(images).to(device))
-
-# clip_r_top1, clip_r_top5, clip_r_top10, clip_ranks = [], [], [], []
-
-# for i in range(len(samples)):
-#     sims = image_features[i].unsqueeze(0) @ text_features.T
-#     sims = sims.squeeze(0)
-#     sorted_indices = torch.argsort(sims, descending=True)
-#     rank = (sorted_indices == i).nonzero(as_tuple=True)[0].item() + 1  # 1-based rank
-#     clip_ranks.append(rank)
-#     clip_r_top1.append(1 if rank == 1 else 0)
-#     clip_r_top5.append(1 if rank <= 5 else 0)
-#     clip_r_top10.append(1 if rank <= 10 else 0)
-
-# # === Step 3: PSNR between .obj and .ply renders ===
-# print("Rendering meshes and computing PSNR...")
-# psnr_scores = []
-# for s in samples:
-#     obj_img_path = os.path.join(TMP_RENDER_DIR, s["filename"] + "_obj.png")
-#     ply_img_path = os.path.join(TMP_RENDER_DIR, s["filename"] + "_ply.png")
-
-#     render_mesh(s["obj_path"], obj_img_path)
-#     render_mesh(s["ply_path"], ply_img_path)
-
-#     obj_img = load_image(obj_img_path)
-#     ply_img = load_image(ply_img_path)
-
-#     psnr = compute_psnr(obj_img, ply_img)
-#     psnr_scores.append(psnr)
-
-# # === Step 4: Save full results ===
-# df = pd.DataFrame({
-#     "filename": [s["filename"] for s in samples],
-#     "prompt": prompts,
-#     "clip_r_precision_top1": clip_r_top1,
-#     "clip_r_precision_top5": clip_r_top5,
-#     "clip_r_precision_top10": clip_r_top10,
-#     "clip_rank": clip_ranks,
-#     "psnr_obj_vs_ply": psnr_scores
-# })
-# df.to_csv(OUT_CSV, index=False)
-# print(f"✅ Full results saved to: {OUT_CSV}")
-
-# # === Step 5: Save summary ===
-# summary = {
-#     "clip_r_precision_top1 (%)": [100 * np.mean(clip_r_top1)],
-#     "clip_r_precision_top5 (%)": [100 * np.mean(clip_r_top5)],
-#     "clip_r_precision_top10 (%)": [100 * np.mean(clip_r_top10)],
-#     "average_clip_rank": [np.mean(clip_ranks)],
-#     "average_psnr": [np.mean(psnr_scores)]
-# }
-# df_summary = pd.DataFrame(summary)
-# df_summary.to_csv(SUMMARY_CSV, index=False)
-# print(f"✅ Summary saved to: {SUMMARY_CSV}")
-
-# === Configuration ===
 import os
 import re
 import torch
@@ -149,7 +18,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 
-# === Helper functions ===
 def extract_prompt(filename):
     name = os.path.splitext(filename)[0]
     words = name.split("_")[:-1]
@@ -195,7 +63,7 @@ def compute_psnr(img1, img2):
     arr2 = np.array(img2)
     return peak_signal_noise_ratio(arr1, arr2, data_range=255)
 
-# === Step 1: Collect samples ===
+#  Collect samples
 samples = []
 for file in os.listdir(DATA_DIR):
     if file.endswith(".png"):
@@ -213,7 +81,7 @@ for file in os.listdir(DATA_DIR):
 
 print(f"Found {len(samples)} samples")
 
-# === Step 2: CLIP R-Precision using Hugging Face (Optimized) ===
+# CLIP R-Precision using Hugging Face (Optimized)
 prompts = [s["prompt"] for s in samples]
 images = [load_image(s["image_path"]) for s in samples]
 
@@ -241,7 +109,7 @@ for i in range(len(images)):
         clip_r_top5.append(1 if rank <= 5 else 0)
         clip_r_top10.append(1 if rank <= 10 else 0)
 
-# === Step 3: PSNR between .obj and .ply renders ===
+#PSNR between .obj and .ply renders
 print("Rendering meshes and computing PSNR...")
 psnr_scores = []
 for s in samples:
@@ -257,7 +125,7 @@ for s in samples:
     psnr = compute_psnr(obj_img, ply_img)
     psnr_scores.append(psnr)
 
-# === Step 4: Save full results ===
+# Save full results
 df = pd.DataFrame({
     "filename": [s["filename"] for s in samples],
     "prompt": prompts,
@@ -268,7 +136,7 @@ df = pd.DataFrame({
     "psnr_obj_vs_ply": psnr_scores
 })
 df.to_csv(OUT_CSV, index=False)
-print(f"✅ Full results saved to: {OUT_CSV}")
+print(f" Full results saved to: {OUT_CSV}")
 
 # === Step 5: Save summary ===
 summary = {
@@ -280,4 +148,4 @@ summary = {
 }
 df_summary = pd.DataFrame(summary)
 df_summary.to_csv(SUMMARY_CSV, index=False)
-print(f"✅ Summary saved to: {SUMMARY_CSV}")
+print(f" Summary saved to: {SUMMARY_CSV}")
