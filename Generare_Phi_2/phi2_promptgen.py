@@ -1,14 +1,11 @@
-# phi2_promptgen.py
-
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-# ✅ Use GPU if available
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ✅ Phi-2 model (best mix of quality and speed)
 model_name = "microsoft/phi-2"
-print(f"🚀 Loading {model_name} on {device}...")
+print(f" Loading {model_name} on {device}...")
 
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -17,10 +14,10 @@ model = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.float16 if torch.cuda.is_available() else torch.float32
 )
 model.to(device)
-print("✅ Phi-2 loaded and ready.")
+print(" Phi-2 loaded and ready.")
 
 def generate_prompt(class_name: str) -> str:
-    # ✅ Use instruction-tuned format to boost response quality
+
     prompt = (
         f"Instruct: Describe a high-quality 3D model of a {class_name}. Include:\n"
         f"- Material (e.g., wood, metal, plastic)\n"
@@ -46,7 +43,7 @@ def generate_prompt(class_name: str) -> str:
     # Decode the response
     response = tokenizer.decode(output_tokens[0], skip_special_tokens=True)
 
-    # Extract the text after "Output:" (if present)
+    # Extract the text
     if "Output:" in response:
         response = response.split("Output:")[-1].strip()
 
