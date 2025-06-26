@@ -8,11 +8,11 @@ from tqdm import tqdm
 from scipy.stats import entropy
 from torch.utils.data import Dataset, DataLoader
 
-# === Add repo path ===
+#Add repo path
 sys.path.append("/shared_storage/mutumihaela/michelangelo/Pointnet_Pointnet2_pytorch")
 from models.pointnet2_cls_msg import get_model
 
-# === CONFIG ===
+#CONFIG
 OBJ_FOLDER = "/shared_storage/mutumihaela/finetune-shape/finetune_cap3d/fine_tuned_generations"
 N_POINTS = 2048
 BATCH_SIZE = 16
@@ -20,16 +20,16 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_PATH = "/shared_storage/mutumihaela/michelangelo/p-is/pretrained_pointnet2_msg.pth"
 OUTPUT_TXT = "/shared_storage/mutumihaela/finetune-shape/finetune_cap3d/finetune1_results/p-is_scores.txt"
 
-# === Load Pretrained PointNet++ MSG ===
+#Load Pretrained PointNet++ MSG
 classifier = get_model(num_class=40, normal_channel=True)
 checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)
 classifier.load_state_dict(checkpoint['model_state_dict'])
 classifier.to(DEVICE)
 classifier.eval()
 
-print(f"✅ Using device: {DEVICE}")
+print(f" Using device: {DEVICE}")
 
-# === Dataset with normals (Option 1) ===
+#Dataset with normals
 class ObjPointCloudDataset(Dataset):
     def __init__(self, obj_folder, n_points=2048):
         self.obj_folder = obj_folder
@@ -61,7 +61,7 @@ class ObjPointCloudDataset(Dataset):
 dataset = ObjPointCloudDataset(OBJ_FOLDER, N_POINTS)
 dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False, drop_last=False)
 
-# === Compute Predictions ===
+#Compute Prediction
 all_predictions = []
 all_obj_names = []
 individual_scores = []
@@ -77,7 +77,7 @@ with torch.no_grad():
 
 all_predictions = np.concatenate(all_predictions, axis=0)
 
-# === Compute P-IS ===
+#Compute P-IS
 p_y = np.mean(all_predictions, axis=0)
 kl_divergences = []
 for idx, p_y_given_x in enumerate(all_predictions):
@@ -94,4 +94,4 @@ with open(OUTPUT_TXT, "w") as f:
         f.write(f"{obj_name}\t{score:.6f}\n")
     f.write(f"\nTotal P-IS: {p_is_total:.6f}\n")
 
-print(f"✅ Done! P-IS results saved to {OUTPUT_TXT}")
+print(f" Done! P-IS results saved to {OUTPUT_TXT}")
