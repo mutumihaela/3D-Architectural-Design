@@ -10,7 +10,7 @@ JSON_PATH = "/Users/mutumihaela/Desktop/blender/placement_plan.json"
 RENDER_DIR = "/Users/mutumihaela/Desktop/blender/renders"
 os.makedirs(RENDER_DIR, exist_ok=True)
 
-# Găsește un nume unic de fișier: render_001.png, render_002.png etc.
+# Găsește un nume unic de fișier
 base_name = "render"
 ext = ".png"
 i = 1
