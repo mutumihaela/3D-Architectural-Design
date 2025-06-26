@@ -9,7 +9,6 @@ from subprocess import run
 import shutil
 import glob
 
-# ---------- Setup ----------
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
@@ -45,12 +44,12 @@ def render_mesh_open3d(mesh_path, save_path):
         img_pil = Image.fromarray(img_np)
         img_pil.save(save_path)
 
-        print(f"🖼️ Rendered and saved: {save_path}")
+        print(f" Rendered and saved: {save_path}")
         del render
     except Exception as e:
         print(f"Error rendering with Open3D: {e}")
 
-# ---------- Main loop ----------
+# Main loop
 with open(prompt_file, 'r') as f:
     prompts = [line.strip() for line in f if line.strip()]
 
@@ -65,7 +64,7 @@ for idx, prompt in enumerate(prompts):
     # === Locate the .obj file ===
     mesh_candidates = glob.glob(os.path.join(output_dir, "text2mesh", "*_out_mesh.obj"))
     if not mesh_candidates:
-        print(f"❌ No mesh found for prompt: {prompt}")
+        print(f" No mesh found for prompt: {prompt}")
         continue
 
     original_obj_path = mesh_candidates[0]
@@ -75,15 +74,15 @@ for idx, prompt in enumerate(prompts):
 
     # Save renamed .obj and .ply
     shutil.copy(original_obj_path, obj_path)
-    print(f"✅ Saved .obj: {obj_path}")
+    print(f" Saved .obj: {obj_path}")
     mesh = o3d.io.read_triangle_mesh(obj_path)
     o3d.io.write_triangle_mesh(ply_path, mesh)
-    print(f"✅ Saved .ply: {ply_path}")
+    print(f" Saved .ply: {ply_path}")
 
-    # === Render ===
+    #Render
     render_mesh_open3d(obj_path, img_path)
 
-    # === CLIP Score ===
+    # CLIP Score
     if os.path.exists(img_path):
         image_input = clip_preprocess(Image.open(img_path)).unsqueeze(0).to(device)
         text_input = clip.tokenize([prompt]).to(device)
@@ -93,10 +92,10 @@ for idx, prompt in enumerate(prompts):
             text_features = clip_model.encode_text(text_input)
             clip_score = torch.cosine_similarity(image_features, text_features).item()
 
-        print(f"📈 CLIP Score: {clip_score:.4f}")
+        print(f" CLIP Score: {clip_score:.4f}")
         with open(clip_score_file, 'a') as f:
             f.write(f"{prompt_safe}_{idx}: {clip_score:.4f}\n")
     else:
-        print(f"⚠️ Image not found for CLIP scoring: {img_path}")
+        print(f"⚠ Image not found for CLIP scoring: {img_path}")
 
     torch.cuda.empty_cache()
